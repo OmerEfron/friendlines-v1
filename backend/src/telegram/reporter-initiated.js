@@ -28,6 +28,18 @@ async function run() {
   }
 }
 
+const SESSION_OPENINGS = [
+  'Anything new to report today?',
+  'What should we cover?',
+  'Any updates worth noting?',
+];
+
+const THREAD_PROMPTS = [
+  (title) => `Following up: "${title}"—any new developments?`,
+  (title) => `Still tracking "${title}". Any progress to add?`,
+  (title) => `About "${title}": anything change since we last spoke?`,
+];
+
 function buildSessionMessages(openThreads) {
   const count = Math.min(
     MESSAGES_MAX,
@@ -35,11 +47,15 @@ function buildSessionMessages(openThreads) {
   );
   const messages = [];
   if (openThreads.length === 0) {
-    messages.push('Good morning. Anything new to report today?');
+    const opener = SESSION_OPENINGS[Math.floor(Math.random() * SESSION_OPENINGS.length)];
+    messages.push(opener);
   } else {
-    messages.push(`Following up on ${openThreads.length} open thread(s).`);
+    const plural = openThreads.length > 1 ? 's' : '';
+    messages.push(`Following up on ${openThreads.length} open thread${plural}.`);
     for (let i = 0; i < Math.min(openThreads.length, count - 1); i++) {
-      messages.push(`About "${openThreads[i].title}": any developments?`);
+      const thread = openThreads[i];
+      const promptFn = THREAD_PROMPTS[i % THREAD_PROMPTS.length];
+      messages.push(promptFn(thread.title));
     }
   }
   return messages.slice(0, count);

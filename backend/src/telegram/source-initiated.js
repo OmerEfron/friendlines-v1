@@ -1,8 +1,11 @@
-const { sendMessage } = require('./index');
+const { sendMessage, sendChatAction } = require('./index');
 const { insertMessage, getRecentMessagesByUserId } = require('../db/messages');
 const { processForPublication } = require('../modules/conversation-engine/pipeline');
+const { generateClarifyingQuestion } = require('../modules/conversation-engine/clarifying');
 
 const CLARIFYING_CAP = 3;
+
+const TIER_LABELS = { 1: 'Feature', 2: 'Main', 3: 'Brief' };
 
 function countTrailingReporterMessages(messages) {
   let count = 0;
@@ -22,7 +25,7 @@ async function handle({ userId, chatId, content, clarifyingCap = CLARIFYING_CAP 
     return;
   }
 
-  const clarifyingQuestion = buildClarifyingQuestion(content, recent);
+  const clarifyingQuestion = await getClarifyingQuestion(content, recent);
   if (!clarifyingQuestion) {
     await runPublicationPipeline(userId, chatId, recent);
     return;
@@ -32,18 +35,49 @@ async function handle({ userId, chatId, content, clarifyingCap = CLARIFYING_CAP 
   await insertMessage(userId, 'reporter', clarifyingQuestion);
 }
 
-async function runPublicationPipeline(userId, chatId, recent) {
+async function getClarifyingQuestion(userContent, recentMessages) {
+  const fallback = buildClarifyingQuestionFallback(userContent, recentMessages);
+  if (!fallback) return null;
+
+  const ctx = recentMessages.map((m) => ({ role: m.role, content: m.content }));
   try {
-    const ctx = recent.map((m) => ({ role: m.role, content: m.content }));
-    const eventSummary = ctx.filter((m) => m.role === 'user').map((m) => m.content).join(' ');
-    if (!eventSummary.trim()) return;
-    await processForPublication({ eventSummary, messageContext: ctx });
+    const aiQuestion = await generateClarifyingQuestion(userContent, ctx);
+    if (aiQuestion) return aiQuestion;
+  } catch (err) {
+    console.warn('AI clarifying question failed, using fallback:', err.message);
+  }
+  return fallback;
+}
+
+function formatOutcomeMessage(result) {
+  if (result.published) {
+    const label = TIER_LABELS[result.tier] || `Tier ${result.tier}`;
+    return `Published as ${label}: "${result.headline}"`;
+  }
+  return `Not published: ${result.rationale}`;
+}
+
+async function runPublicationPipeline(userId, chatId, recent) {
+  const ctx = recent.map((m) => ({ role: m.role, content: m.content }));
+  const eventSummary = ctx.filter((m) => m.role === 'user').map((m) => m.content).join(' ');
+  if (!eventSummary.trim()) return;
+
+  try {
+    await sendChatAction(chatId, 'typing');
+    const result = await processForPublication({ eventSummary, messageContext: ctx });
+    const outcomeText = formatOutcomeMessage(result);
+    await sendMessage(chatId, outcomeText);
+    await insertMessage(userId, 'reporter', outcomeText);
   } catch (err) {
     console.error('Publication pipeline error:', err);
+    const fallback =
+      'Processing your message encountered an issue. Please try again.';
+    await sendMessage(chatId, fallback);
+    await insertMessage(userId, 'reporter', fallback);
   }
 }
 
-function buildClarifyingQuestion(userContent, recentMessages) {
+function buildClarifyingQuestionFallback(userContent, recentMessages) {
   if (userContent.length < 10) {
     return 'Could you share a bit more context?';
   }
@@ -57,4 +91,10 @@ function buildClarifyingQuestion(userContent, recentMessages) {
   return null;
 }
 
-module.exports = { handle, countTrailingReporterMessages, buildClarifyingQuestion };
+module.exports = {
+  handle,
+  countTrailingReporterMessages,
+  buildClarifyingQuestionFallback,
+  getClarifyingQuestion,
+  formatOutcomeMessage,
+};

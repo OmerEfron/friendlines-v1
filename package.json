@@ -12,6 +12,7 @@
     "lint": "echo 'lint placeholder'",
     "test": "npm run test --workspaces --if-present",
     "start:backend": "npm run start -w backend",
+    "start:dev:backend": "npm run dev -w backend",
     "start:frontend": "npm run dev -w frontend"
   },
   "engines": {

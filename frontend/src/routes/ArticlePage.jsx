@@ -13,11 +13,19 @@ function ArticlePage() {
   if (!data) return <><Header /><ErrorState error={{ message: 'Article not found' }} /></>;
 
   const paragraphs = (data.body || '').split(/\n\n+/).filter(Boolean);
+  const editionDate = data.date;
 
   return (
     <>
-      <Header subtitle={data.date ? new Date(data.date).toLocaleDateString() : ''} />
+      <Header subtitle={editionDate ? new Date(editionDate).toLocaleDateString() : ''} />
       <main style={styles.main}>
+        {editionDate && (
+          <p style={styles.back}>
+            <Link to={`/?date=${editionDate}`} style={styles.link}>
+              ← Back to edition
+            </Link>
+          </p>
+        )}
         <article>
           <span style={styles.tier}>
             {data.tier === 1 ? 'Feature' : data.tier === 2 ? 'Main' : 'Brief'}
@@ -28,11 +36,6 @@ function ArticlePage() {
               <p key={i} style={styles.para}>{p}</p>
             ))}
           </div>
-          {data.related_thread_id && (
-            <p style={styles.related}>
-              <Link to="/archive" style={styles.link}>View related thread in archive</Link>
-            </p>
-          )}
         </article>
       </main>
     </>
@@ -45,6 +48,14 @@ const styles = {
     margin: '0 auto',
     padding: '1.5rem',
     fontFamily: 'Georgia, serif',
+  },
+  back: {
+    marginBottom: '1rem',
+    fontSize: '0.9rem',
+  },
+  link: {
+    color: '#333',
+    textDecoration: 'underline',
   },
   tier: {
     fontSize: '0.75rem',
@@ -63,15 +74,6 @@ const styles = {
   },
   para: {
     marginBottom: '1rem',
-  },
-  related: {
-    marginTop: '2rem',
-    fontSize: '0.9rem',
-    color: '#666',
-  },
-  link: {
-    color: '#333',
-    textDecoration: 'underline',
   },
 };
 

@@ -1,5 +1,5 @@
 const { chatCompletion } = require('../../ai/client');
-const { buildArticlePrompt } = require('./prompts');
+const { buildArticlePrompt, PROMPT_VERSION } = require('./prompts');
 const { validateArticleOutput } = require('./guardrails');
 
 const MAX_RETRIES = 2;
@@ -14,10 +14,30 @@ function parseArticleResponse(text) {
   };
 }
 
+function buildRetryInstruction(issues) {
+  const toneIssues = issues.filter((i) =>
+    /forbidden tone|headline|structure/i.test(i)
+  );
+  const wordIssues = issues.filter((i) => /words|minimum|maximum|length/i.test(i));
+  const parts = [];
+  if (toneIssues.length) {
+    parts.push(
+      `Remove these violations: ${toneIssues.join('; ')}. Use neutral newsroom tone.`
+    );
+  }
+  if (wordIssues.length) {
+    parts.push(`Adjust length: ${wordIssues.join('; ')}.`);
+  }
+  return parts.length ? parts.join(' ') : `Fix: ${issues.join('. ')}`;
+}
+
 async function generate({ tier, eventSummary, messageContext }) {
   const prompt = buildArticlePrompt(tier, eventSummary, messageContext);
   const messages = [
-    { role: 'system', content: 'You respond with valid JSON only. No markdown or extra text.' },
+    {
+      role: 'system',
+      content: 'You respond with valid JSON only. No markdown or extra text.',
+    },
     { role: 'user', content: prompt },
   ];
 
@@ -34,11 +54,13 @@ async function generate({ tier, eventSummary, messageContext }) {
         return { headline, subheadline, body };
       }
       lastError = new Error(`Guardrail failed: ${issues.join('; ')}`);
-      messages.push({ role: 'assistant', content: response });
-      messages.push({
-        role: 'user',
-        content: `Please fix: ${issues.join('. ')} Rewrite to satisfy word count.`,
-      });
+      if (attempt < MAX_RETRIES) {
+        messages.push({ role: 'assistant', content: response });
+        messages.push({
+          role: 'user',
+          content: buildRetryInstruction(issues),
+        });
+      }
     } catch (err) {
       lastError = err;
     }
@@ -46,4 +68,10 @@ async function generate({ tier, eventSummary, messageContext }) {
   throw lastError;
 }
 
-module.exports = { generate, parseArticleResponse, validateArticleOutput };
+module.exports = {
+  generate,
+  parseArticleResponse,
+  validateArticleOutput,
+  buildRetryInstruction,
+  PROMPT_VERSION,
+};

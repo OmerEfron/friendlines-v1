@@ -19,12 +19,18 @@ describe('API routes', () => {
     }
   });
 
-  it('GET /api/editions returns 200 with editions array', async () => {
+  it('GET /api/editions returns 200 with editions array and preview fields', async () => {
     const res = await request(app).get('/api/editions');
     expect([200, 500]).toContain(res.status);
     if (res.status === 200) {
       expect(res.body).toHaveProperty('editions');
       expect(Array.isArray(res.body.editions)).toBe(true);
+      for (const ed of res.body.editions) {
+        expect(ed).toHaveProperty('date');
+        expect(ed).toHaveProperty('articleCount');
+        expect(typeof ed.articleCount).toBe('number');
+        expect(ed).toHaveProperty('topStoryHeadline');
+      }
     }
   });
 

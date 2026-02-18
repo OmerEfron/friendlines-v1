@@ -1,5 +1,8 @@
 const { validateWebhookSecret, extractMessage } = require('../src/telegram/webhook');
-const { countTrailingReporterMessages, buildClarifyingQuestion } = require('../src/telegram/source-initiated');
+const {
+  countTrailingReporterMessages,
+  buildClarifyingQuestionFallback,
+} = require('../src/telegram/source-initiated');
 
 describe('webhook validation', () => {
   it('accepts when no secret configured', () => {
@@ -71,15 +74,22 @@ describe('clarifying question cap', () => {
   });
 
   it('builds clarifying question for short content', () => {
-    expect(buildClarifyingQuestion('hi', [])).toBe('Could you share a bit more context?');
+    expect(buildClarifyingQuestionFallback('hi', [])).toBe(
+      'Could you share a bit more context?'
+    );
   });
 
   it('returns null when already asked context', () => {
-    const recent = [{ role: 'user', content: 'x' }, { role: 'reporter', content: 'Could you share a bit more context?' }];
-    expect(buildClarifyingQuestion('hello world', recent)).toBeNull();
+    const recent = [
+      { role: 'user', content: 'x' },
+      { role: 'reporter', content: 'Could you share a bit more context?' },
+    ];
+    expect(buildClarifyingQuestionFallback('hello world', recent)).toBeNull();
   });
 
   it('asks when for content without temporal cue', () => {
-    expect(buildClarifyingQuestion('I got a promotion at work', [])).toBe('When did this happen?');
+    expect(buildClarifyingQuestionFallback('I got a promotion at work', [])).toBe(
+      'When did this happen?'
+    );
   });
 });

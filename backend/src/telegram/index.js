@@ -18,4 +18,9 @@ async function sendMessage(chatId, text) {
   return client.sendMessage(chatId, text);
 }
 
-module.exports = { getBot, sendMessage };
+async function sendChatAction(chatId, action = 'typing') {
+  const client = getBot();
+  return client.sendChatAction(chatId, action);
+}
+
+module.exports = { getBot, sendMessage, sendChatAction };

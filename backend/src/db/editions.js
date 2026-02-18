@@ -23,4 +23,29 @@ async function listEditions(limit = 30) {
   return r.rows;
 }
 
-module.exports = { getOrCreateEdition, getEditionByDate, listEditions };
+async function listEditionsWithPreview(limit = 30) {
+  const editions = await listEditions(limit);
+  const results = [];
+  for (const ed of editions) {
+    const articles = await pool.query(
+      'SELECT id, headline, tier FROM articles WHERE date = $1 ORDER BY tier ASC',
+      [ed.date]
+    );
+    const rows = articles.rows;
+    const topStory = rows[0] || null;
+    results.push({
+      id: ed.id,
+      date: ed.date,
+      articleCount: rows.length,
+      topStoryHeadline: topStory?.headline || null,
+    });
+  }
+  return results;
+}
+
+module.exports = {
+  getOrCreateEdition,
+  getEditionByDate,
+  listEditions,
+  listEditionsWithPreview,
+};

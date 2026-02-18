@@ -22,12 +22,20 @@ function ArchivePage() {
             {(data || []).map((ed) => (
               <li key={ed.id} style={styles.item}>
                 <Link to={`/?date=${ed.date}`} style={styles.link} data-testid="edition-link">
-                  {new Date(ed.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  <span style={styles.date}>
+                    {new Date(ed.date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                  {ed.articleCount != null && (
+                    <span style={styles.meta}>
+                      {ed.articleCount} article{ed.articleCount !== 1 ? 's' : ''}
+                      {ed.topStoryHeadline && ` · ${ed.topStoryHeadline.slice(0, 50)}${ed.topStoryHeadline.length > 50 ? '…' : ''}`}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -61,6 +69,16 @@ const styles = {
   link: {
     color: '#333',
     textDecoration: 'none',
+    display: 'block',
+  },
+  date: {
+    fontWeight: 500,
+  },
+  meta: {
+    display: 'block',
+    fontSize: '0.85rem',
+    color: '#666',
+    marginTop: '0.25rem',
   },
   empty: {
     color: '#888',

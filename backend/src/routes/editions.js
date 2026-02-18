@@ -1,5 +1,5 @@
 const { buildEditionForDate } = require('../modules/edition-builder');
-const { listEditions } = require('../db/editions');
+const { listEditionsWithPreview } = require('../db/editions');
 
 function formatDate(d) {
   return d.toISOString().slice(0, 10);
@@ -33,7 +33,7 @@ module.exports = function editionsRoute(router) {
   router.get('/editions', async (req, res) => {
     try {
       const limit = Math.min(parseInt(req.query.limit, 10) || 30, 100);
-      const editions = await listEditions(limit);
+      const editions = await listEditionsWithPreview(limit);
       res.json({ editions });
     } catch (err) {
       res.status(500).json({ error: err.message });
