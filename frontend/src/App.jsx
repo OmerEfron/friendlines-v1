@@ -5,11 +5,13 @@ import ArticlePage from './routes/ArticlePage';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/archive" element={<ArchivePage />} />
-      <Route path="/article/:id" element={<ArticlePage />} />
-    </Routes>
+    <div className="app-layout">
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/archive" element={<ArchivePage />} />
+        <Route path="/article/:id" element={<ArticlePage />} />
+      </Routes>
+    </div>
   );
 }
 

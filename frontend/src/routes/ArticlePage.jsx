@@ -8,73 +8,81 @@ function ArticlePage() {
   const { id } = useParams();
   const { data, loading, error } = useArticle(id);
 
-  if (loading) return <><Header /><Loading /></>;
-  if (error) return <><Header /><ErrorState error={error} /></>;
-  if (!data) return <><Header /><ErrorState error={{ message: 'Article not found' }} /></>;
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="main-content">
+          <Loading />
+        </main>
+      </>
+    );
+  }
+  if (error) {
+    return (
+      <>
+        <Header />
+        <main className="main-content">
+          <ErrorState error={error} />
+        </main>
+      </>
+    );
+  }
+  if (!data) {
+    return (
+      <>
+        <Header />
+        <main className="main-content">
+          <ErrorState error={{ message: 'Article not found' }} />
+        </main>
+      </>
+    );
+  }
 
   const paragraphs = (data.body || '').split(/\n\n+/).filter(Boolean);
   const editionDate = data.date;
+  const dateLabel = editionDate
+    ? new Date(editionDate).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+
+  const tierLabel =
+    data.tier === 1 ? 'Feature' : data.tier === 2 ? 'Main' : 'Brief';
+  const leadParagraph = paragraphs[0];
+  const bodyParagraphs = paragraphs.slice(1);
 
   return (
     <>
-      <Header subtitle={editionDate ? new Date(editionDate).toLocaleDateString() : ''} />
-      <main style={styles.main}>
+      <Header subtitle={dateLabel} dateLabel={dateLabel} />
+      <main className="main-content article-page">
         {editionDate && (
-          <p style={styles.back}>
-            <Link to={`/?date=${editionDate}`} style={styles.link}>
+          <p>
+            <Link to={`/?date=${editionDate}`} className="back-link">
               ← Back to edition
             </Link>
           </p>
         )}
         <article>
-          <span style={styles.tier}>
-            {data.tier === 1 ? 'Feature' : data.tier === 2 ? 'Main' : 'Brief'}
-          </span>
-          <h1 style={styles.headline}>{data.headline}</h1>
-          <div style={styles.body}>
-            {paragraphs.map((p, i) => (
-              <p key={i} style={styles.para}>{p}</p>
-            ))}
-          </div>
+          <span className="tier-badge">{tierLabel}</span>
+          <h1 className="article-page-headline">{data.headline}</h1>
+          {leadParagraph && (
+            <p className="article-page-subheadline">{leadParagraph}</p>
+          )}
+          {bodyParagraphs.length > 0 && (
+            <div className="article-body">
+              {bodyParagraphs.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+            </div>
+          )}
         </article>
       </main>
     </>
   );
 }
-
-const styles = {
-  main: {
-    maxWidth: '700px',
-    margin: '0 auto',
-    padding: '1.5rem',
-    fontFamily: 'Georgia, serif',
-  },
-  back: {
-    marginBottom: '1rem',
-    fontSize: '0.9rem',
-  },
-  link: {
-    color: '#333',
-    textDecoration: 'underline',
-  },
-  tier: {
-    fontSize: '0.75rem',
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  },
-  headline: {
-    fontSize: '1.75rem',
-    marginTop: '0.25rem',
-    marginBottom: '0.5rem',
-    lineHeight: 1.2,
-  },
-  body: {
-    lineHeight: 1.7,
-  },
-  para: {
-    marginBottom: '1rem',
-  },
-};
 
 export default ArticlePage;

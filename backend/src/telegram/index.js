@@ -13,9 +13,19 @@ function getBot() {
   return bot;
 }
 
-async function sendMessage(chatId, text) {
+async function sendMessage(chatId, text, options = {}) {
   const client = getBot();
-  return client.sendMessage(chatId, text);
+  return client.sendMessage(chatId, text, options);
+}
+
+const END_NOW_BUTTON = {
+  reply_markup: {
+    inline_keyboard: [[{ text: 'End now', callback_data: 'end_now' }]],
+  },
+};
+
+async function sendMessageWithEndButton(chatId, text) {
+  return sendMessage(chatId, text, END_NOW_BUTTON);
 }
 
 async function sendChatAction(chatId, action = 'typing') {
@@ -23,4 +33,15 @@ async function sendChatAction(chatId, action = 'typing') {
   return client.sendChatAction(chatId, action);
 }
 
-module.exports = { getBot, sendMessage, sendChatAction };
+async function answerCallbackQuery(callbackQueryId, options = {}) {
+  const client = getBot();
+  return client.answerCallbackQuery(callbackQueryId, options);
+}
+
+module.exports = {
+  getBot,
+  sendMessage,
+  sendMessageWithEndButton,
+  sendChatAction,
+  answerCallbackQuery,
+};

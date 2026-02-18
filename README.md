@@ -28,6 +28,12 @@ Telegram Bot → Express Backend → PostgreSQL → React Frontend
 4. Start backend: `npm run start:backend`
 5. Start frontend: `npm run start:frontend`
 
+## Bot Flows
+
+- **Daily routine**: Bot initiates a 4–5 question session once per day (9:00 UTC). User can answer and continue, or tap "End now" to publish early.
+- **Source-initiated**: User sends an update anytime; bot asks up to 3 clarifying questions, then publishes or skips.
+- **Weekly interview**: Scheduled Sundays 10:00 UTC, or manually via `/weekly_interview` or `/weekly`. Theme-based reflective Q&A; publish as a feature story when warranted.
+
 ## V1 Scope
 
 Single user, Telegram intake, daily editions, weekly interviews, article archive. No social, multi-user, or out-of-scope integrations. See [docs/scope/v1-boundaries-checklist.md](docs/scope/v1-boundaries-checklist.md).

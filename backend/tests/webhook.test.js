@@ -1,4 +1,8 @@
-const { validateWebhookSecret, extractMessage } = require('../src/telegram/webhook');
+const {
+  validateWebhookSecret,
+  extractMessage,
+  extractCallbackQuery,
+} = require('../src/telegram/webhook');
 const {
   countTrailingReporterMessages,
   buildClarifyingQuestionFallback,
@@ -61,6 +65,44 @@ describe('payload parsing', () => {
   it('returns null when message has no text', () => {
     const req = { body: { message: { chat: { id: 1 }, from: {} } } };
     expect(extractMessage(req)).toBeNull();
+  });
+});
+
+describe('callback query extraction', () => {
+  it('extracts end_now callback', () => {
+    const req = {
+      body: {
+        callback_query: {
+          id: 'cb-1',
+          message: { chat: { id: 456 } },
+          from: { first_name: 'User' },
+          data: 'end_now',
+        },
+      },
+    };
+    expect(extractCallbackQuery(req)).toEqual({
+      id: 'cb-1',
+      chatId: 456,
+      from: { first_name: 'User' },
+    });
+  });
+
+  it('returns null when no callback_query', () => {
+    expect(extractCallbackQuery({ body: {} })).toBeNull();
+  });
+
+  it('returns null when callback data is not end_now', () => {
+    const req = {
+      body: {
+        callback_query: {
+          id: 'cb-1',
+          message: { chat: { id: 1 } },
+          from: {},
+          data: 'other_action',
+        },
+      },
+    };
+    expect(extractCallbackQuery(req)).toBeNull();
   });
 });
 

@@ -67,6 +67,10 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 
 Verify with a test message in Telegram.
 
+**Bot flows after webhook is set:**
+- Daily session starts at 9:00, 14:00, 20:00 UTC. Each session runs 4–5 questions; user can tap "End now" to publish early.
+- Weekly interview: Sundays 10:00 UTC or `/weekly_interview` command.
+
 ## 5. Render Auto-Deploy and CI
 
 - **Auto-Deploy**: Render deploys when you push to the linked branch.

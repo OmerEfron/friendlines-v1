@@ -1,10 +1,16 @@
-const { sendMessage } = require('./index');
+const { sendMessageWithEndButton } = require('./index');
 const { insertMessage } = require('../db/messages');
-const { getOpenThreads } = require('../modules/thread-manager');
+const {
+  createSession,
+  hasActiveSessionForDate,
+  getActiveSessionByUserIdAndDate,
+  incrementAskedCount,
+  MODE_DAILY,
+} = require('../db/sessions');
 const { pool } = require('../db/pool');
 
-const MESSAGES_MIN = 2;
-const MESSAGES_MAX = 5;
+const TARGET_QUESTIONS_MIN = 4;
+const TARGET_QUESTIONS_MAX = 5;
 
 async function getActiveTelegramChatIds() {
   const r = await pool.query(
@@ -13,19 +19,10 @@ async function getActiveTelegramChatIds() {
   return r.rows.map((row) => ({ userId: row.id, chatId: Number(row.telegram_chat_id) }));
 }
 
-async function run() {
-  const recipients = await getActiveTelegramChatIds();
-  if (recipients.length === 0) return;
-
-  const openThreads = await getOpenThreads();
-  const messages = buildSessionMessages(openThreads);
-
-  for (const { chatId, userId } of recipients) {
-    for (const text of messages) {
-      await sendMessage(chatId, text);
-      await insertMessage(userId, 'reporter', text);
-    }
-  }
+function getTargetCount() {
+  return Math.floor(
+    Math.random() * (TARGET_QUESTIONS_MAX - TARGET_QUESTIONS_MIN + 1)
+  ) + TARGET_QUESTIONS_MIN;
 }
 
 const SESSION_OPENINGS = [
@@ -34,31 +31,27 @@ const SESSION_OPENINGS = [
   'Any updates worth noting?',
 ];
 
-const THREAD_PROMPTS = [
-  (title) => `Following up: "${title}"—any new developments?`,
-  (title) => `Still tracking "${title}". Any progress to add?`,
-  (title) => `About "${title}": anything change since we last spoke?`,
-];
+async function run() {
+  const recipients = await getActiveTelegramChatIds();
+  if (recipients.length === 0) return;
 
-function buildSessionMessages(openThreads) {
-  const count = Math.min(
-    MESSAGES_MAX,
-    Math.max(MESSAGES_MIN, openThreads.length + 1)
-  );
-  const messages = [];
-  if (openThreads.length === 0) {
-    const opener = SESSION_OPENINGS[Math.floor(Math.random() * SESSION_OPENINGS.length)];
-    messages.push(opener);
-  } else {
-    const plural = openThreads.length > 1 ? 's' : '';
-    messages.push(`Following up on ${openThreads.length} open thread${plural}.`);
-    for (let i = 0; i < Math.min(openThreads.length, count - 1); i++) {
-      const thread = openThreads[i];
-      const promptFn = THREAD_PROMPTS[i % THREAD_PROMPTS.length];
-      messages.push(promptFn(thread.title));
-    }
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const { chatId, userId } of recipients) {
+    const hasSession = await hasActiveSessionForDate(userId, today);
+    if (hasSession) continue;
+
+    const targetCount = getTargetCount();
+    await createSession(userId, MODE_DAILY, targetCount, today);
+
+    const opener =
+      SESSION_OPENINGS[Math.floor(Math.random() * SESSION_OPENINGS.length)];
+    await sendMessageWithEndButton(chatId, opener);
+    await insertMessage(userId, 'reporter', opener);
+
+    const session = await getActiveSessionByUserIdAndDate(userId, today);
+    if (session) await incrementAskedCount(session.id);
   }
-  return messages.slice(0, count);
 }
 
-module.exports = { run, getActiveTelegramChatIds, buildSessionMessages };
+module.exports = { run, getActiveTelegramChatIds };
