@@ -1,0 +1,20 @@
+---
+description: Git workflow, commits, and branch discipline. Always enforced.
+alwaysApply: true
+---
+
+# Git Operations
+
+## Commits
+- Write clear commit messages: imperative mood, concise subject.
+- Conventional format: `type(scope): subject` (e.g. `feat(api): add edition list endpoint`, `fix(telegram): cap clarifying questions at 3`).
+- Commit in meaningful chunks; avoid mixed-feature or unrelated changes in one commit.
+
+## Safety
+- Do not `git push --force` or rewrite history unless the user explicitly requests it.
+- Do not `git push` without explicit user request; prefer staging and committing locally first.
+- Before destructive operations (reset, rebase, force push), confirm with the user.
+
+## Branching
+- Use descriptive branch names (e.g. `feat/article-archive`, `fix/webhook-timeout`).
+- Keep commits focused; one logical change per commit when feasible.

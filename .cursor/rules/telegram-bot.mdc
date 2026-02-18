@@ -1,0 +1,16 @@
+---
+description: Telegram bot integration patterns for FriendLines conversational intake
+globs: backend/**/telegram/**/*.js,backend/**/telegram/**/*.mjs,backend/**/telegram/**/*.cjs
+alwaysApply: false
+---
+
+# Telegram Bot
+
+## Responsibilities
+- Handle webhooks, persist messages, enforce chat limits.
+- Reporter-initiated: 3× daily (morning/midday/evening); 2–5 messages per session.
+- Source-initiated ("leak"): assess importance, up to 3 clarifying questions, classify event, update threads.
+
+## Boundaries
+- Do not add therapy, casual chat, or non-editorial tone.
+- Integrate with Thread Manager and Editorial Analyzer for continuity and publication decisions.

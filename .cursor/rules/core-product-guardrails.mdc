@@ -1,0 +1,24 @@
+---
+description: FriendLines V1 product identity, scope boundaries, and editorial philosophy. Always on.
+alwaysApply: true
+---
+
+# FriendLines Product Guardrails
+
+## Identity
+FriendLines is a **personal news network**—not social media, a journaling app, a chatbot, or a therapy tool.
+The user is the subject; an AI journalist reports their life in structured news coverage (Ynet-style tone).
+
+## V1 Scope (Enforce Strictly)
+- **In:** Single user, single AI journalist, Telegram intake, minimal web edition, daily publications, weekly interviews, archive.
+- **Out:** Social/sharing, circles, multi-user, WhatsApp/calendar integrations, advanced analytics, notification systems (except Telegram).
+
+## Editorial Constraints
+- **Tone:** Structured, professional, impactful. No exaggeration, clickbait, therapy, or forced humor.
+- **Tiers:** Tier 1 (600–900 words), Tier 2 (300–500 words), Tier 3 (80–180 words). Not every conversation yields a story.
+- **Articles:** Must include framing, continuity, context, and perspective—honest coverage without unnecessary drama.
+
+## Architecture Guardrails
+- Flow: Telegram → Express backend → PostgreSQL → React frontend.
+- Backend modules: Conversation Engine, Thread Manager, Editorial Analyzer, Article Generator, Edition Builder.
+- Frontend routes: `/`, `/archive`, `/article/:id`. No SSR for V1.

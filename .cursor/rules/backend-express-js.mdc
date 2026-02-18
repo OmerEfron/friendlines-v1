@@ -1,0 +1,19 @@
+---
+description: Express backend patterns for FriendLines API and news engine (JavaScript)
+globs: backend/**/*.js,backend/**/*.mjs,backend/**/*.cjs
+alwaysApply: false
+---
+
+# Backend Express (JavaScript)
+
+## Module Boundaries
+- Conversation Engine: webhooks, messages, chat limits, follow-ups.
+- Thread Manager: open topics, importance, narrative continuity.
+- Editorial Analyzer: significance, tier, publish decision.
+- Article Generator: structured articles, editorial guidelines.
+- Edition Builder: group by date, Top Story, finalize edition.
+
+## Async & Errors
+- Use async route handlers; let rejected promises bubble to error middleware.
+- Central error handler: `(err, req, res, next) => { res.status(err.status ?? 500).send(...) }`.
+- Never swallow errors—propagate via `next(err)` or by throwing in async handlers.

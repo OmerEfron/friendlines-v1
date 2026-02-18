@@ -1,0 +1,25 @@
+---
+description: Test-writing conventions for FriendLines (unit, integration, API)
+globs: "**/*.test.js,**/*.spec.js,**/__tests__/**/*.js,**/test/**/*.js"
+alwaysApply: false
+---
+
+# Testing Rules
+
+## Structure
+- Colocate tests with source or use dedicated `__tests__` / `test/` directories.
+- One describe/context per module or component; nested for logical grouping.
+- Test names: describe behavior, not implementation.
+
+## Assertions
+- Assert outcomes, not internals.
+- Use project test runner (Jest, Mocha, etc.); prefer built-in matchers over custom helpers when equivalent.
+
+## Coverage Focus
+- API: status codes, response shape, validation errors.
+- Components: rendered output, user interactions, loading/error states.
+- Backend modules: happy path, error propagation, boundary conditions.
+
+## FriendLines-Specific
+- Editorial/Article tests: verify tier constraints, word limits, tone boundaries.
+- Telegram flow tests: message limits, thread updates, clarifying-question caps.

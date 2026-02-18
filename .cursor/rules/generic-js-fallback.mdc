@@ -1,0 +1,12 @@
+---
+description: Baseline JavaScript conventions for FriendLines (early-stage or un-scoped files)
+globs: "**/*.js,**/*.jsx,**/*.sql"
+alwaysApply: false
+---
+
+# Generic JavaScript Fallback
+
+## Conventions
+- Keep files modular; split when exceeding ~300 lines.
+- Prefer named exports for clarity.
+- Use consistent error handling; avoid empty catch blocks.

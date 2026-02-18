@@ -1,0 +1,23 @@
+---
+description: React SPA patterns for FriendLines web edition (JavaScript)
+globs: frontend/**/*.js,frontend/**/*.jsx
+alwaysApply: false
+---
+
+# Frontend React (JavaScript)
+
+## Components & Hooks
+- Use functional components only.
+- Hooks at top level only—no conditionals, loops, or nested functions.
+- Separate distinct sync processes into individual `useEffect` hooks.
+- Extract reusable logic into custom hooks (e.g. data-fetching, route state).
+
+## Routes
+- `/` (Today's edition)
+- `/archive` (chronological list)
+- `/article/:id` (single article)
+- Use React Router or equivalent; no SSR for V1.
+
+## Data Flow
+- Fetch edition/articles via backend API.
+- Keep state local to route or page; avoid global state unless necessary.

@@ -1,0 +1,18 @@
+---
+description: PostgreSQL schema and migration discipline for FriendLines V1
+globs: db/**/*.sql,backend/**/migrations/**/*.js
+alwaysApply: false
+---
+
+# Database (PostgreSQL)
+
+## V1 Schema
+- **users:** id, name, language
+- **messages:** id, user_id, role (user/reporter), content, timestamp
+- **threads:** id, title, status (open/closed), importance_score, created_at
+- **events:** id, thread_id, summary, sentiment, significance_score
+- **articles:** id, date, tier, headline, body, related_thread_id
+- **editions:** id, date
+
+## Migrations
+- Keep migrations backward-safe; avoid destructive changes without explicit versioning.
