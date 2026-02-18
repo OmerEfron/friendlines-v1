@@ -1,0 +1,20 @@
+{
+  "name": "friendlines-v1",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FriendLines personal news network - V1 blueprint",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "lint": "echo 'lint placeholder'",
+    "test": "npm run test --workspaces --if-present",
+    "start:backend": "npm run start -w backend",
+    "start:frontend": "npm run dev -w frontend"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
