@@ -18,7 +18,8 @@ function countTrailingReporterMessages(messages) {
 
 async function handle({ userId, chatId, content, clarifyingCap = CLARIFYING_CAP }) {
   const recent = await getRecentMessagesByUserId(userId, 50);
-  const trailingReporter = countTrailingReporterMessages(recent);
+  const beforeCurrentUser = recent.slice(0, -1);
+  const trailingReporter = countTrailingReporterMessages(beforeCurrentUser);
 
   if (trailingReporter >= clarifyingCap) {
     await runPublicationPipeline(userId, chatId, recent);
