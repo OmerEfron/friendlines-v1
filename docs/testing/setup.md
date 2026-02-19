@@ -41,7 +41,7 @@ npm run test:integration -w backend
 # Frontend only
 npm run test -w frontend
 
-# E2E (requires app running)
+# E2E (requires backend + frontend running; see e2e/README.md)
 npm run test:e2e
 ```
 
