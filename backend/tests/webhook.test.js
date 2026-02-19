@@ -88,6 +88,7 @@ describe('callback query extraction', () => {
       id: 'cb-1',
       chatId: 456,
       from: { first_name: 'User' },
+      data: 'end_now',
     });
   });
 
@@ -95,7 +96,39 @@ describe('callback query extraction', () => {
     expect(extractCallbackQuery({ body: {} })).toBeNull();
   });
 
-  it('returns null when callback data is not end_now', () => {
+  it('extracts preview_publish and start_over callbacks', () => {
+    expect(
+      extractCallbackQuery({
+        body: {
+          callback_query: {
+            id: 'cb-pub',
+            message: { chat: { id: 789 } },
+            from: { first_name: 'U' },
+            data: 'preview_publish',
+          },
+        },
+      })
+    ).toEqual({
+      id: 'cb-pub',
+      chatId: 789,
+      from: { first_name: 'U' },
+      data: 'preview_publish',
+    });
+    expect(
+      extractCallbackQuery({
+        body: {
+          callback_query: {
+            id: 'cb-start',
+            message: { chat: { id: 111 } },
+            from: {},
+            data: 'start_over',
+          },
+        },
+      })
+    ).toEqual({ id: 'cb-start', chatId: 111, from: {}, data: 'start_over' });
+  });
+
+  it('returns null when callback data is not a known action', () => {
     const req = {
       body: {
         callback_query: {

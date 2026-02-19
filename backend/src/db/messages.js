@@ -24,8 +24,17 @@ async function countClarifyingQuestionsInSession(userId, sinceTimestamp) {
   return r.rows[0].c;
 }
 
+async function getLastUserMessageTimestamp(userId) {
+  const r = await pool.query(
+    'SELECT timestamp FROM messages WHERE user_id = $1 AND role = $2 ORDER BY timestamp DESC LIMIT 1',
+    [userId, 'user']
+  );
+  return r.rows[0]?.timestamp || null;
+}
+
 module.exports = {
   insertMessage,
   getRecentMessagesByUserId,
   countClarifyingQuestionsInSession,
+  getLastUserMessageTimestamp,
 };

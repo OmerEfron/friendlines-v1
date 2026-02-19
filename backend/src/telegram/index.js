@@ -24,8 +24,31 @@ const END_NOW_BUTTON = {
   },
 };
 
+const START_OVER_BUTTON = {
+  reply_markup: {
+    inline_keyboard: [[{ text: 'Start over', callback_data: 'start_over' }]],
+  },
+};
+
+const PREVIEW_BUTTONS = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: 'Publish to Web', callback_data: 'preview_publish' }],
+      [{ text: 'Discard', callback_data: 'preview_discard' }],
+    ],
+  },
+};
+
 async function sendMessageWithEndButton(chatId, text) {
   return sendMessage(chatId, text, END_NOW_BUTTON);
+}
+
+async function sendMessageWithPreviewButtons(chatId, text) {
+  return sendMessage(chatId, text, PREVIEW_BUTTONS);
+}
+
+async function sendMessageWithStartOverButton(chatId, text) {
+  return sendMessage(chatId, text, START_OVER_BUTTON);
 }
 
 async function sendChatAction(chatId, action = 'typing') {
@@ -42,6 +65,8 @@ module.exports = {
   getBot,
   sendMessage,
   sendMessageWithEndButton,
+  sendMessageWithPreviewButtons,
+  sendMessageWithStartOverButton,
   sendChatAction,
   answerCallbackQuery,
 };

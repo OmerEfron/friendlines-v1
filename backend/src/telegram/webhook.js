@@ -27,21 +27,24 @@ function extractMessage(req) {
   };
 }
 
+const CALLBACK_ACTIONS = ['end_now', 'start_over', 'preview_publish', 'preview_discard'];
+
 function extractCallbackQuery(req) {
   const update = req.body;
   if (!update || !update.callback_query) return null;
   const q = update.callback_query;
-  if (q.data !== 'end_now') return null;
+  if (!CALLBACK_ACTIONS.includes(q.data)) return null;
   return {
     id: q.id,
     chatId: q.message?.chat?.id,
     from: q.from,
+    data: q.data,
   };
 }
 
 async function handleCallbackQuery(callback) {
+  const { sendMessage } = require('./index');
   try {
-    await answerCallbackQuery(callback.id, { text: 'Ending conversation...' });
     let userId = await getUserIdByTelegramChatId(callback.chatId);
     if (!userId && callback.from) {
       userId = await getOrCreateUserByTelegramChatId(
@@ -51,18 +54,38 @@ async function handleCallbackQuery(callback) {
     }
     if (!userId) return;
 
+    if (callback.data === 'preview_publish' || callback.data === 'preview_discard') {
+      await answerCallbackQuery(callback.id, { text: 'Processing...' });
+      await sessionHandler.handleDraftAction(userId, callback.chatId, callback.data);
+      return;
+    }
+
+    if (callback.data === 'start_over') {
+      await answerCallbackQuery(callback.id, { text: 'Starting fresh...' });
+      await sessionHandler.forceStartSession(userId, callback.chatId, 'daily');
+      return;
+    }
+
+    await answerCallbackQuery(callback.id, { text: 'Ending conversation...' });
     const handled = await sessionHandler.handleEndNow({
       userId,
       chatId: callback.chatId,
     });
     if (!handled) {
-      const { sendMessage } = require('./index');
       await sendMessage(callback.chatId, 'No active conversation to end.');
     }
   } catch (err) {
     console.error('Callback query handler error:', err);
   }
 }
+
+const MODE_COMMANDS = {
+  '/start': 'daily',
+  '/reset': 'daily',
+  '/breaking': 'breaking',
+  '/leak': 'leak',
+  '/gossip': 'gossip',
+};
 
 async function handleMessage(message) {
   const userId = await getOrCreateUserByTelegramChatId(
@@ -71,8 +94,15 @@ async function handleMessage(message) {
   );
 
   const text = message.text.trim();
-  if (text === '/weekly_interview' || text === '/weekly') {
+  if (text === '/weekly_interview' || text === '/weekly' || text === '/interview') {
+    sessionHandler.clearDraftForUser(userId);
     await weeklyInitiated.startForUser(userId, message.chatId);
+    return;
+  }
+
+  const mode = MODE_COMMANDS[text];
+  if (mode) {
+    await sessionHandler.forceStartSession(userId, message.chatId, mode);
     return;
   }
 

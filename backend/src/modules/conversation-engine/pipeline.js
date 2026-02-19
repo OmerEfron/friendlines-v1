@@ -5,7 +5,9 @@ const { createArticle } = require('../../db/articles');
 const { PROMPT_VERSION: editorialVersion } = require('../editorial-analyzer/prompts');
 const { PROMPT_VERSION: articleVersion } = require('../article-generator/prompts');
 
-async function processForPublication({ eventSummary, messageContext }) {
+const DEFAULT_FORCE_TIER = 3;
+
+async function processForPublication({ eventSummary, messageContext, forcePublish = false, draftOnly = false } = {}) {
   const thread = await threadManager.createOrGetThread(eventSummary);
   await threadManager.addEvent(thread.id, eventSummary);
 
@@ -20,10 +22,20 @@ async function processForPublication({ eventSummary, messageContext }) {
     tier,
     shouldPublish,
     rationale: (rationale || '').slice(0, 80),
+    forcePublish,
   };
   console.log('[pipeline] editorial:', JSON.stringify(logCtx));
 
-  if (!shouldPublish || !tier) {
+  let effectiveTier = tier;
+  let effectivePublish = shouldPublish;
+
+  if (forcePublish && (!shouldPublish || !tier)) {
+    effectiveTier = DEFAULT_FORCE_TIER;
+    effectivePublish = true;
+    console.log('[pipeline] forcePublish override: tier=', effectiveTier);
+  }
+
+  if (!effectivePublish || !effectiveTier) {
     return {
       published: false,
       tier: null,
@@ -31,19 +43,35 @@ async function processForPublication({ eventSummary, messageContext }) {
       articleId: null,
       threadId: thread.id,
       headline: null,
+      body: null,
+      subheadline: null,
     };
   }
 
   const { headline, subheadline, body } = await articleGenerator.generate({
-    tier,
+    tier: effectiveTier,
     eventSummary,
     messageContext,
   });
 
+  if (draftOnly) {
+    return {
+      published: false,
+      tier: effectiveTier,
+      rationale: rationale || null,
+      articleId: null,
+      threadId: thread.id,
+      headline,
+      subheadline,
+      body: [subheadline, body].filter(Boolean).join('\n\n'),
+      draftOnly: true,
+    };
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const article = await createArticle(
     today,
-    tier,
+    effectiveTier,
     headline,
     [subheadline, body].filter(Boolean).join('\n\n'),
     thread.id
@@ -52,13 +80,13 @@ async function processForPublication({ eventSummary, messageContext }) {
   console.log('[pipeline] published:', {
     articleId: article.id,
     articlePrompt: articleVersion,
-    tier,
+    tier: effectiveTier,
     headline: (headline || '').slice(0, 60),
   });
 
   return {
     published: true,
-    tier,
+    tier: effectiveTier,
     rationale: rationale || null,
     articleId: article.id,
     threadId: thread.id,

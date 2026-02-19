@@ -4,18 +4,14 @@ const {
   createSession,
   getActiveSessionByUserId,
   incrementAskedCount,
+  endActiveSessionForUser,
   MODE_WEEKLY_INTERVIEW,
 } = require('../db/sessions');
 const { generateOpeningQuestion } = require('../modules/conversation-engine/weekly-interview');
 const { TARGET_QUESTIONS } = require('../modules/conversation-engine/weekly-interview');
 
 async function startForUser(userId, chatId) {
-  const existing = await getActiveSessionByUserId(userId);
-  if (existing) {
-    const { sendMessage } = require('./index');
-    await sendMessage(chatId, 'A conversation is already in progress. Finish it first or use "End now".');
-    return;
-  }
+  await endActiveSessionForUser(userId);
 
   const today = new Date().toISOString().slice(0, 10);
   const session = await createSession(userId, MODE_WEEKLY_INTERVIEW, TARGET_QUESTIONS, today);

@@ -62,6 +62,15 @@ async function hasActiveSessionForDate(userId, sessionDate) {
   return r.rows.length > 0;
 }
 
+async function endActiveSessionForUser(userId) {
+  const session = await getActiveSessionByUserId(userId);
+  if (session) {
+    await endSession(session.id);
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
   MODE_DAILY,
   MODE_WEEKLY_INTERVIEW,
@@ -72,5 +81,6 @@ module.exports = {
   getActiveSessionByUserIdAndDate,
   incrementAskedCount,
   endSession,
+  endActiveSessionForUser,
   hasActiveSessionForDate,
 };

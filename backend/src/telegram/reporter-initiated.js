@@ -1,16 +1,10 @@
-const { sendMessageWithEndButton } = require('./index');
-const { insertMessage } = require('../db/messages');
-const {
-  createSession,
-  hasActiveSessionForDate,
-  getActiveSessionByUserIdAndDate,
-  incrementAskedCount,
-  MODE_DAILY,
-} = require('../db/sessions');
+const { sendMessageWithStartOverButton } = require('./index');
+const { insertMessage, getLastUserMessageTimestamp } = require('../db/messages');
+const { getActiveSessionByUserId } = require('../db/sessions');
 const { pool } = require('../db/pool');
 
-const TARGET_QUESTIONS_MIN = 4;
-const TARGET_QUESTIONS_MAX = 5;
+const COOLDOWN_HOURS_MS = 3 * 60 * 60 * 1000;
+const PROMPT = 'Anything to report lately?';
 
 async function getActiveTelegramChatIds() {
   const r = await pool.query(
@@ -19,38 +13,28 @@ async function getActiveTelegramChatIds() {
   return r.rows.map((row) => ({ userId: row.id, chatId: Number(row.telegram_chat_id) }));
 }
 
-function getTargetCount() {
-  return Math.floor(
-    Math.random() * (TARGET_QUESTIONS_MAX - TARGET_QUESTIONS_MIN + 1)
-  ) + TARGET_QUESTIONS_MIN;
-}
-
-const SESSION_OPENINGS = [
-  'Anything new to report today?',
-  'What should we cover?',
-  'Any updates worth noting?',
-];
-
 async function run() {
   const recipients = await getActiveTelegramChatIds();
   if (recipients.length === 0) return;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const now = Date.now();
 
   for (const { chatId, userId } of recipients) {
-    const hasSession = await hasActiveSessionForDate(userId, today);
-    if (hasSession) continue;
+    const activeSession = await getActiveSessionByUserId(userId);
+    if (activeSession) continue;
 
-    const targetCount = getTargetCount();
-    await createSession(userId, MODE_DAILY, targetCount, today);
+    const lastUserMsg = await getLastUserMessageTimestamp(userId);
+    if (lastUserMsg) {
+      const elapsed = now - new Date(lastUserMsg).getTime();
+      if (elapsed < COOLDOWN_HOURS_MS) continue;
+    }
 
-    const opener =
-      SESSION_OPENINGS[Math.floor(Math.random() * SESSION_OPENINGS.length)];
-    await sendMessageWithEndButton(chatId, opener);
-    await insertMessage(userId, 'reporter', opener);
-
-    const session = await getActiveSessionByUserIdAndDate(userId, today);
-    if (session) await incrementAskedCount(session.id);
+    try {
+      await sendMessageWithStartOverButton(chatId, PROMPT);
+      await insertMessage(userId, 'reporter', PROMPT);
+    } catch (err) {
+      console.error('Reporter prompt failed for user', userId, err);
+    }
   }
 }
 
