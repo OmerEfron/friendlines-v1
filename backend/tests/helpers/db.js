@@ -4,10 +4,10 @@
  */
 const { pool } = require('../../src/db/pool');
 
-async function truncateTables(tables = ['messages', 'events', 'conversation_sessions', 'articles', 'editions', 'threads', 'users']) {
-  for (const table of tables) {
-    await pool.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
-  }
+async function truncateTables(tables = ['editions', 'users', 'threads']) {
+  if (tables.length === 0) return;
+  const sql = `TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE`;
+  await pool.query(sql);
 }
 
 async function withCleanDb(fn) {

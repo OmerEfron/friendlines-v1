@@ -32,8 +32,11 @@ FriendLines uses a test pyramid:
 # From repo root – runs all workspaces
 npm test
 
-# Backend only
+# Backend only (unit tests)
 npm run test -w backend
+
+# Backend integration (requires PostgreSQL, DATABASE_URL)
+npm run test:integration -w backend
 
 # Frontend only
 npm run test -w frontend
