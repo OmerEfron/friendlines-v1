@@ -6,19 +6,42 @@ on:
     paths:
       - 'backend/**'
       - 'frontend/**'
+      - 'e2e/**'
       - 'package.json'
       - 'package-lock.json'
+      - 'playwright.config.js'
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
       - 'frontend/**'
+      - 'e2e/**'
       - 'package.json'
       - 'package-lock.json'
+      - 'playwright.config.js'
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: friendlines_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/friendlines_test
+      NODE_ENV: test
+      TZ: UTC
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +52,81 @@ jobs:
 
       - run: npm ci
 
+      - name: Run migrations
+        run: npm run migrate -w backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/friendlines_test
+
       - name: Backend tests
         run: npm run test -w backend -- --forceExit
 
+      - name: Backend integration tests
+        run: npm run test:integration -w backend
+        env:
+          INTEGRATION_TESTS: '1'
+
       - name: Frontend tests
         run: npm run test -w frontend
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: friendlines_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/friendlines_test
+      NODE_ENV: test
+      TZ: UTC
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run migrations
+        run: npm run migrate -w backend
+
+      - name: Start backend
+        run: npm run start:backend -w backend &
+        env:
+          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/friendlines_test
+
+      - name: Start frontend
+        run: npm run start:frontend -w frontend &
+
+      - name: Wait for app
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5173/ > /dev/null && curl -sf http://localhost:3000/api/health > /dev/null; then
+              echo "App ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App failed to start"
+          exit 1
+
+      - name: E2E tests
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:5173

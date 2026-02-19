@@ -37,8 +37,9 @@ describeIntegration('API integration', () => {
   });
 
   it('GET /api/articles/:id returns 200 for existing article', async () => {
-    await getOrCreateEdition(today());
-    const a = await createArticle(testDate, 1, 'Headline', 'Body. '.repeat(30), null);
+    const d = today();
+    await getOrCreateEdition(d);
+    const a = await createArticle(d, 1, 'Headline', 'Body. '.repeat(30), null);
     const res = await request(app).get(`/api/articles/${a.id}`);
     expect(res.status).toBe(200);
     expect(res.body.headline).toBe('Headline');

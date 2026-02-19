@@ -20,8 +20,9 @@ describeIntegration('DB editions integration', () => {
   it('getOrCreateEdition creates and returns edition', async () => {
     const ed = await getOrCreateEdition(testDate);
     expect(ed).toBeDefined();
-    expect(ed.date).toBe(testDate);
     expect(ed.id).toBeDefined();
+    const dateStr = ed.date instanceof Date ? ed.date.toISOString().slice(0, 10) : String(ed.date).slice(0, 10);
+    expect(dateStr).toBe(testDate);
   });
 
   it('getOrCreateEdition returns existing on conflict', async () => {
@@ -35,7 +36,9 @@ describeIntegration('DB editions integration', () => {
     await getOrCreateEdition('2025-02-19');
     const list = await listEditions(10);
     expect(list.length).toBe(2);
-    expect(list[0].date).toBe('2025-02-19');
+    const first = list[0].date;
+    const dateStr = first instanceof Date ? first.toISOString().slice(0, 10) : String(first).slice(0, 10);
+    expect(dateStr).toBe('2025-02-19');
   });
 
   it('listEditionsWithPreview includes articleCount and topStoryHeadline', async () => {

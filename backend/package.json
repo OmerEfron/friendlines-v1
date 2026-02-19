@@ -10,7 +10,7 @@
     "migrate:create": "node-pg-migrate create -m db/migrations",
     "lint": "echo 'lint placeholder'",
     "test": "jest",
-    "test:integration": "INTEGRATION_TESTS=1 jest --forceExit"
+    "test:integration": "TZ=UTC INTEGRATION_TESTS=1 jest --forceExit"
   },
   "dependencies": {
     "cors": "^2.8.5",
