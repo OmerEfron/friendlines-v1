@@ -78,19 +78,36 @@ async function handleSessionReply({ userId, chatId, content }) {
   return true;
 }
 
+function hasActiveSourceInitiatedConversation(messages) {
+  if (messages.length === 0) return false;
+  const lastMsg = messages[messages.length - 1];
+  if (lastMsg.role !== 'reporter') return false;
+  const isOutcome = lastMsg.content.includes('Published') || lastMsg.content.includes('Not published');
+  return !isOutcome;
+}
+
 async function handleEndNow({ userId, chatId }) {
   const session = await getActiveSessionByUserId(userId);
-  if (!session) return false;
+  if (session) {
+    await endSession(session.id);
+    const recent = await getRecentMessagesByUserId(userId, 50);
+    await runPublicationPipeline(userId, chatId, recent);
+    return true;
+  }
 
-  await endSession(session.id);
   const recent = await getRecentMessagesByUserId(userId, 50);
-  await runPublicationPipeline(userId, chatId, recent);
-  return true;
+  if (hasActiveSourceInitiatedConversation(recent)) {
+    await runPublicationPipeline(userId, chatId, recent);
+    return true;
+  }
+
+  return false;
 }
 
 module.exports = {
   handleSessionReply,
   handleEndNow,
+  hasActiveSourceInitiatedConversation,
   runPublicationPipeline,
   formatOutcomeMessage,
 };

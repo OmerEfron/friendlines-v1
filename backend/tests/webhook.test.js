@@ -5,8 +5,12 @@ const {
 } = require('../src/telegram/webhook');
 const {
   countTrailingReporterMessages,
+  countReporterQuestionsInCurrentInteraction,
   buildClarifyingQuestionFallback,
 } = require('../src/telegram/source-initiated');
+const {
+  hasActiveSourceInitiatedConversation,
+} = require('../src/telegram/session-handler');
 
 describe('webhook validation', () => {
   it('accepts when no secret configured', () => {
@@ -115,6 +119,40 @@ describe('clarifying question cap', () => {
     expect(countTrailingReporterMessages([{ role: 'reporter' }, { role: 'user' }])).toBe(0);
   });
 
+  it('counts reporter questions in current interaction (alternating pattern)', () => {
+    const messages = [
+      { role: 'user', content: 'I got promoted' },
+      { role: 'reporter', content: 'When did this happen?' },
+      { role: 'user', content: 'Yesterday' },
+      { role: 'reporter', content: 'How do you feel?' },
+      { role: 'user', content: 'Great' },
+      { role: 'reporter', content: 'Any other details?' },
+    ];
+    expect(countReporterQuestionsInCurrentInteraction(messages)).toBe(3);
+  });
+
+  it('counts reporter questions until outcome message', () => {
+    const messages = [
+      { role: 'user', content: 'Old event' },
+      { role: 'reporter', content: 'Published as Brief: "Old Story"' },
+      { role: 'user', content: 'New event' },
+      { role: 'reporter', content: 'When did this happen?' },
+      { role: 'user', content: 'Today' },
+      { role: 'reporter', content: 'Any details?' },
+    ];
+    expect(countReporterQuestionsInCurrentInteraction(messages)).toBe(2);
+  });
+
+  it('returns 0 when last message is outcome', () => {
+    const messages = [
+      { role: 'user', content: 'Event' },
+      { role: 'reporter', content: 'When?' },
+      { role: 'user', content: 'Today' },
+      { role: 'reporter', content: 'Not published: insufficient detail' },
+    ];
+    expect(countReporterQuestionsInCurrentInteraction(messages)).toBe(0);
+  });
+
   it('builds clarifying question for short content', () => {
     expect(buildClarifyingQuestionFallback('hi', [])).toBe(
       'Could you share a bit more context?'
@@ -133,5 +171,43 @@ describe('clarifying question cap', () => {
     expect(buildClarifyingQuestionFallback('I got a promotion at work', [])).toBe(
       'When did this happen?'
     );
+  });
+});
+
+describe('source-initiated conversation state detection', () => {
+  it('detects active conversation when last message is reporter question', () => {
+    const messages = [
+      { role: 'user', content: 'Event' },
+      { role: 'reporter', content: 'When did this happen?' },
+    ];
+    expect(hasActiveSourceInitiatedConversation(messages)).toBe(true);
+  });
+
+  it('detects no active conversation when last message is outcome', () => {
+    const messages = [
+      { role: 'user', content: 'Event' },
+      { role: 'reporter', content: 'Published as Brief: "Story"' },
+    ];
+    expect(hasActiveSourceInitiatedConversation(messages)).toBe(false);
+  });
+
+  it('detects no active conversation when last message is user', () => {
+    const messages = [
+      { role: 'reporter', content: 'Question?' },
+      { role: 'user', content: 'Answer' },
+    ];
+    expect(hasActiveSourceInitiatedConversation(messages)).toBe(false);
+  });
+
+  it('detects no active conversation when messages empty', () => {
+    expect(hasActiveSourceInitiatedConversation([])).toBe(false);
+  });
+
+  it('detects no active conversation for "Not published" outcome', () => {
+    const messages = [
+      { role: 'user', content: 'Event' },
+      { role: 'reporter', content: 'Not published: insufficient substance' },
+    ];
+    expect(hasActiveSourceInitiatedConversation(messages)).toBe(false);
   });
 });

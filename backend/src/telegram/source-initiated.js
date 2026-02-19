@@ -1,4 +1,4 @@
-const { sendMessage, sendChatAction } = require('./index');
+const { sendMessage, sendMessageWithEndButton, sendChatAction } = require('./index');
 const { insertMessage, getRecentMessagesByUserId } = require('../db/messages');
 const { processForPublication } = require('../modules/conversation-engine/pipeline');
 const { generateClarifyingQuestion } = require('../modules/conversation-engine/clarifying');
@@ -16,12 +16,25 @@ function countTrailingReporterMessages(messages) {
   return count;
 }
 
+function countReporterQuestionsInCurrentInteraction(messages) {
+  let count = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role === 'reporter') {
+      const isOutcome = msg.content.includes('Published') || msg.content.includes('Not published');
+      if (isOutcome) break;
+      count++;
+    }
+  }
+  return count;
+}
+
 async function handle({ userId, chatId, content, clarifyingCap = CLARIFYING_CAP }) {
   const recent = await getRecentMessagesByUserId(userId, 50);
   const beforeCurrentUser = recent.slice(0, -1);
-  const trailingReporter = countTrailingReporterMessages(beforeCurrentUser);
+  const reporterQuestionCount = countReporterQuestionsInCurrentInteraction(beforeCurrentUser);
 
-  if (trailingReporter >= clarifyingCap) {
+  if (reporterQuestionCount >= clarifyingCap) {
     await runPublicationPipeline(userId, chatId, recent);
     return;
   }
@@ -32,7 +45,7 @@ async function handle({ userId, chatId, content, clarifyingCap = CLARIFYING_CAP 
     return;
   }
 
-  await sendMessage(chatId, clarifyingQuestion);
+  await sendMessageWithEndButton(chatId, clarifyingQuestion);
   await insertMessage(userId, 'reporter', clarifyingQuestion);
 }
 
@@ -95,7 +108,9 @@ function buildClarifyingQuestionFallback(userContent, recentMessages) {
 module.exports = {
   handle,
   countTrailingReporterMessages,
+  countReporterQuestionsInCurrentInteraction,
   buildClarifyingQuestionFallback,
   getClarifyingQuestion,
   formatOutcomeMessage,
+  runPublicationPipeline,
 };
