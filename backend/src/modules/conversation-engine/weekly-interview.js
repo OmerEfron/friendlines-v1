@@ -1,13 +1,14 @@
 const { chatCompletion } = require('../../ai/client');
 const { getOpenThreads } = require('../thread-manager');
+const config = require('../../config');
 
 const TARGET_QUESTIONS = 6;
 
-const OPENING_PROMPT = `You are a journalist conducting a weekly reflective interview for a personal news network.
+const OPENING_PROMPT = `You are a journalist conducting a weekly reflective interview with ${config.userName} for a personal news network.
 Generate exactly ONE thoughtful question to open the interview. Focus on: highlights of the week, notable decisions, themes that emerged, or ongoing storylines.
 Be concise (under 20 words). Professional, warm but not casual. Respond with the question only—no preamble.`;
 
-const FOLLOW_UP_PROMPT = `You are a journalist conducting a weekly reflective interview. The interviewee just shared: "{userContent}"
+const FOLLOW_UP_PROMPT = `You are a journalist conducting a weekly reflective interview with ${config.userName}. The interviewee just shared: "{userContent}"
 
 Recent exchange:
 {context}

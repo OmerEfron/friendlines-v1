@@ -19,6 +19,7 @@ Backend runs on Render (Web Service + Postgres). Frontend is a static SPA on Ver
    - `TELEGRAM_WEBHOOK_SECRET` – any secure random string
    - `OPENAI_API_KEY` – your OpenAI key
    - `FRONTEND_URL` – your Vercel production URL (e.g. `https://friendlines.vercel.app`)
+   - `FRIENDLINES_USER_NAME` – subject of coverage (e.g. `Omer Efron`)
 6. Wait for the Postgres DB and Web Service to deploy.
 
 ## 2. Run Database Migrations

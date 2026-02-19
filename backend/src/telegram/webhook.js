@@ -2,10 +2,9 @@ const sourceInitiated = require('./source-initiated');
 const sessionHandler = require('./session-handler');
 const weeklyInitiated = require('./weekly-initiated');
 const { getOrCreateUserByTelegramChatId, getUserIdByTelegramChatId } = require('../db/users');
+const config = require('../config');
 const { insertMessage } = require('../db/messages');
 const { answerCallbackQuery } = require('./index');
-const config = require('../config');
-
 const CLARIFYING_QUESTION_CAP = 3;
 
 function validateWebhookSecret(req) {
@@ -49,7 +48,7 @@ async function handleCallbackQuery(callback) {
     if (!userId && callback.from) {
       userId = await getOrCreateUserByTelegramChatId(
         callback.chatId,
-        callback.from.first_name || 'User'
+        config.userName
       );
     }
     if (!userId) return;
@@ -90,7 +89,7 @@ const MODE_COMMANDS = {
 async function handleMessage(message) {
   const userId = await getOrCreateUserByTelegramChatId(
     message.chatId,
-    message.from?.first_name || 'User'
+    config.userName
   );
 
   const text = message.text.trim();

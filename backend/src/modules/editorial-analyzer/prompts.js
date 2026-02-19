@@ -1,3 +1,4 @@
+const config = require('../../config');
 const PROMPT_VERSION = 'v1';
 
 const RUBRIC = `
@@ -10,7 +11,8 @@ function buildEditorialPrompt(eventSummary, messageContext) {
   const context = messageContext
     .map((m) => `[${m.role}]: ${m.content}`)
     .join('\n');
-  return `You are an editorial analyst for a personal news network. Assess whether this event warrants publication and at what tier.
+  const subject = config.userName;
+  return `You are an editorial analyst for a personal news network covering ${subject}. Assess whether this event warrants publication and at what tier.
 ${RUBRIC}
 
 Event summary: ${eventSummary}

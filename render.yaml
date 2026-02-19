@@ -32,3 +32,5 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: FRIENDLINES_USER_NAME
+        sync: false

@@ -8,4 +8,5 @@ module.exports = {
   telegramWebhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
   openaiApiKey: process.env.OPENAI_API_KEY,
   frontendUrl: process.env.FRONTEND_URL,
+  userName: process.env.FRIENDLINES_USER_NAME || 'User',
 };

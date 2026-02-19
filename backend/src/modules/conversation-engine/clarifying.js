@@ -1,4 +1,5 @@
 const { chatCompletion } = require('../../ai/client');
+const config = require('../../config');
 
 const PROMPT_VERSION = 'v1';
 
@@ -7,7 +8,8 @@ function buildClarifyingPrompt(userContent, recentMessages) {
     .slice(-6)
     .map((m) => `[${m.role}]: ${m.content}`)
     .join('\n');
-  return `You are a journalist for a personal news network gathering facts. The source just shared: "${userContent}"
+  const subject = config.userName;
+  return `You are a journalist for a personal news network gathering facts about ${subject}. The source just shared: "${userContent}"
 
 Recent exchange:
 ${context || '(none)'}

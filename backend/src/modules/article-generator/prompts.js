@@ -1,3 +1,5 @@
+const config = require('../../config');
+
 const TIER_RANGES = {
   1: { min: 600, max: 900 },
   2: { min: 300, max: 500 },
@@ -27,7 +29,8 @@ function buildArticlePrompt(tier, eventSummary, messageContext) {
     .slice(-10)
     .map((m) => `[${m.role}]: ${m.content}`)
     .join('\n');
-  return `You are a journalist for a personal news network. Write a structured news article.
+  const subject = config.userName;
+  return `You are a journalist for a personal news network. The subject of coverage is ${subject}. Write a structured news article about their life.
 Tone: Ynet-style newsroom—structured, professional, impactful.${ANTI_PATTERNS}
 Word count: ${min}-${max} words exactly (body only).
 
